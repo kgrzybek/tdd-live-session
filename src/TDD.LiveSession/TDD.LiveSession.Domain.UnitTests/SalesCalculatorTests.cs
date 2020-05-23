@@ -46,9 +46,9 @@ namespace TDD.LiveSession.Domain.UnitTests
             return new MoneyValue(value);
         }
 
-        public static decimal operator /(MoneyValue moneyValue, int number)
+        public static decimal operator /(MoneyValue moneyValueLeft, MoneyValue moneyValueRight)
         {
-            return moneyValue._value / number;
+            return moneyValueLeft._value / moneyValueRight._value;
         }
     }
 
@@ -56,7 +56,7 @@ namespace TDD.LiveSession.Domain.UnitTests
     {
         public static Points Calculate(MoneyValue salesValue)
         {
-            return Points.Of(salesValue / 100);
+            return Points.Of(salesValue / MoneyValue.Of(100));
         }
     }
 }
