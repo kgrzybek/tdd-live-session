@@ -43,16 +43,20 @@ namespace TDD.LiveSession.Domain.UnitTests
             List<TestData> testDataList = new List<TestData>();
 
             MoneyValue salesValue = MoneyValue.Of(1000);
-            SalesData salesData = new SalesData(salesValue, "Standard");
+            SalesData salesData = new SalesData(salesValue, "Standard", false);
             testDataList.Add(new TestData(salesData, Points.Of(10)));
 
+            MoneyValue salesValueIsWithdrawn = MoneyValue.Of(1000);
+            SalesData salesDataIsWithdrawn = new SalesData(salesValueIsWithdrawn, "Standard", true);
+            testDataList.Add(new TestData(salesDataIsWithdrawn, Points.Of(0)));
+
             MoneyValue salesValuePremium = MoneyValue.Of(1000);
-            SalesData salesDataPremium = new SalesData(salesValuePremium, "Premium");
+            SalesData salesDataPremium = new SalesData(salesValuePremium, "Premium", false);
             testDataList.Add(new TestData(salesDataPremium, Points.Of(20)));
 
             MoneyValue salesValueProductWithoutPrice = MoneyValue.Of(1000);
             SalesData salesDataProductWithoutPrice = 
-                new SalesData(salesValueProductWithoutPrice, "Undefined");
+                new SalesData(salesValueProductWithoutPrice, "Undefined", false);
             testDataList.Add(new TestData(salesDataProductWithoutPrice, Points.Of(0)));
 
             TestCases = testDataList.Select(x => new TestCaseData(x.SalesData, x.ExpectedPoints));
@@ -106,15 +110,20 @@ namespace TDD.LiveSession.Domain.UnitTests
 
         public string ProductCategory { get; }
 
-        public SalesData(MoneyValue value, string productCategory)
+        public bool IsWithdrawn { get; }
+
+        public SalesData(MoneyValue value, string productCategory, bool isWithdrawn)
         {
             this.Value = value;
             this.ProductCategory = productCategory;
+            this.IsWithdrawn = isWithdrawn;
         }
 
         public override string ToString()
         {
-            return $"Value:{this.Value}, ProductCategory:{this.ProductCategory}";
+            return $"Value:{this.Value}, " +
+                   $"ProductCategory:{this.ProductCategory}, " +
+                   $"IsWithdrawn:{this.IsWithdrawn}";
         }
     }
 
@@ -192,6 +201,11 @@ namespace TDD.LiveSession.Domain.UnitTests
     {
         public static Points Calculate(SalesData salesData, PriceList priceList)
         {
+            if (salesData.IsWithdrawn)
+            {
+                return Points.Of(0);
+            }
+
             MoneyValue moneyForOnePoint = priceList.GetValueForPointForProductCategory(salesData.ProductCategory);
 
             if (moneyForOnePoint != MoneyValue.Of(0))
