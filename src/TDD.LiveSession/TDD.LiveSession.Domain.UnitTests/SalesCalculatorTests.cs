@@ -11,9 +11,24 @@ namespace TDD.LiveSession.Domain.UnitTests
         public void SalesCalculator_Calculate_Test()
         {
             MoneyValue salesValue = MoneyValue.Of(1000);
-            var points = SalesCalculator.Calculate(salesValue);
+            Points points = SalesCalculator.Calculate(salesValue);
 
-            Assert.That(points, Is.EqualTo(10));
+            Assert.That(points, Is.EqualTo(Points.Of(10)));
+        }
+    }
+
+    public struct Points
+    {
+        private decimal _value;
+
+        private Points(decimal value)
+        {
+            _value = value;
+        }
+
+        public static Points Of(decimal value)
+        {
+            return new Points(value);
         }
     }
 
@@ -21,7 +36,7 @@ namespace TDD.LiveSession.Domain.UnitTests
     {
         private readonly decimal _value;
 
-        public MoneyValue(decimal value)
+        private MoneyValue(decimal value)
         {
             _value = value;
         }
@@ -39,9 +54,9 @@ namespace TDD.LiveSession.Domain.UnitTests
 
     public class SalesCalculator
     {
-        public static decimal Calculate(MoneyValue salesValue)
+        public static Points Calculate(MoneyValue salesValue)
         {
-            return salesValue / 100;
+            return Points.Of(salesValue / 100);
         }
     }
 }
