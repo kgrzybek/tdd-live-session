@@ -47,11 +47,17 @@ namespace TDD.LiveSession.Domain.UnitTests
 
     public struct PriceList
     {
-        public List<PriceListItem> PriceListItems { get; }
+        private readonly List<PriceListItem> _priceListItems;
 
         public PriceList(List<PriceListItem> priceListItems)
         {
-            PriceListItems = priceListItems;
+            _priceListItems = priceListItems;
+        }
+
+        public MoneyValue GetValueForPointForProductCategory(string productCategory)
+        {
+            return _priceListItems
+                .SingleOrDefault(x => x.ProductCategory == productCategory).ValueForPoint;
         }
     }
 
@@ -124,8 +130,7 @@ namespace TDD.LiveSession.Domain.UnitTests
     {
         public static Points Calculate(SalesData salesData, PriceList priceList)
         {
-            MoneyValue moneyForOnePoint = priceList.PriceListItems
-                .SingleOrDefault(x => x.ProductCategory == salesData.ProductCategory).ValueForPoint;
+            MoneyValue moneyForOnePoint = priceList.GetValueForPointForProductCategory(salesData.ProductCategory);
 
             return Points.Of(salesData.Value / moneyForOnePoint);
         }
