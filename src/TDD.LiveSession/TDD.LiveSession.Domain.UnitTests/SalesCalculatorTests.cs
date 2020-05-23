@@ -8,12 +8,27 @@ namespace TDD.LiveSession.Domain.UnitTests
     public class SalesCalculatorTests
     {
         [Test]
-        public void SalesCalculator_Calculate_Test()
+        public void SalesCalculator_CalculateStandardProduct_Test()
         {
             MoneyValue salesValue = MoneyValue.Of(1000);
-            Points points = SalesCalculator.Calculate(salesValue);
+            SalesData salesData = new SalesData(salesValue, "Standard");
+            
+            Points points = SalesCalculator.Calculate(salesData);
 
             Assert.That(points, Is.EqualTo(Points.Of(10)));
+        }
+    }
+
+    public struct SalesData
+    {
+        public MoneyValue Value { get; }
+
+        public string ProductCategory { get; }
+
+        public SalesData(MoneyValue value, string productCategory)
+        {
+            this.Value = value;
+            this.ProductCategory = productCategory;
         }
     }
 
@@ -54,9 +69,9 @@ namespace TDD.LiveSession.Domain.UnitTests
 
     public class SalesCalculator
     {
-        public static Points Calculate(MoneyValue salesValue)
+        public static Points Calculate(SalesData salesData)
         {
-            return Points.Of(salesValue / MoneyValue.Of(100));
+            return Points.Of(salesData.Value / MoneyValue.Of(100));
         }
     }
 }
