@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection.Emit;
 using NUnit.Framework;
 
@@ -13,8 +15,9 @@ namespace TDD.LiveSession.Domain.UnitTests
         {
             MoneyValue salesValue = MoneyValue.Of(1000);
             SalesData salesData = new SalesData(salesValue, "Standard");
-            
-            Points points = SalesCalculator.Calculate(salesData);
+            var priceList = CreatePriceList();
+
+            Points points = SalesCalculator.Calculate(salesData, priceList);
 
             Assert.That(points, Is.EqualTo(Points.Of(10)));
         }
@@ -24,10 +27,43 @@ namespace TDD.LiveSession.Domain.UnitTests
         {
             MoneyValue salesValue = MoneyValue.Of(1000);
             SalesData salesData = new SalesData(salesValue, "Premium");
+            var priceList = CreatePriceList();
 
-            Points points = SalesCalculator.Calculate(salesData);
+            Points points = SalesCalculator.Calculate(salesData, priceList);
 
             Assert.That(points, Is.EqualTo(Points.Of(20)));
+        }
+
+        private static PriceList CreatePriceList()
+        {
+            List<PriceListItem> priceListItems = new List<PriceListItem>();
+            priceListItems.Add(new PriceListItem("Standard", MoneyValue.Of(100)));
+            priceListItems.Add(new PriceListItem("Premium", MoneyValue.Of(50)));
+            PriceList priceList = new PriceList(priceListItems);
+
+            return priceList;
+        }
+    }
+
+    public struct PriceList
+    {
+        public List<PriceListItem> PriceListItems { get; }
+
+        public PriceList(List<PriceListItem> priceListItems)
+        {
+            PriceListItems = priceListItems;
+        }
+    }
+
+    public struct PriceListItem
+    {
+        public string ProductCategory { get; }
+        public MoneyValue ValueForPoint { get; }
+
+        public PriceListItem(string productCategory, MoneyValue valueForPoint)
+        {
+            ProductCategory = productCategory;
+            ValueForPoint = valueForPoint;
         }
     }
 
@@ -86,17 +122,10 @@ namespace TDD.LiveSession.Domain.UnitTests
 
     public class SalesCalculator
     {
-        public static Points Calculate(SalesData salesData)
+        public static Points Calculate(SalesData salesData, PriceList priceList)
         {
-            MoneyValue moneyForOnePoint;
-            if (salesData.ProductCategory == "Standard")
-            {
-                moneyForOnePoint = MoneyValue.Of(100);
-            }
-            else
-            {
-                moneyForOnePoint = MoneyValue.Of(50);
-            }
+            MoneyValue moneyForOnePoint = priceList.PriceListItems
+                .SingleOrDefault(x => x.ProductCategory == salesData.ProductCategory).ValueForPoint;
 
             return Points.Of(salesData.Value / moneyForOnePoint);
         }
