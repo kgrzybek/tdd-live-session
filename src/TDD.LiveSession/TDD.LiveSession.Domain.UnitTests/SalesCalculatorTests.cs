@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Reflection.Emit;
 using NUnit.Framework;
 
@@ -16,6 +17,17 @@ namespace TDD.LiveSession.Domain.UnitTests
             Points points = SalesCalculator.Calculate(salesData);
 
             Assert.That(points, Is.EqualTo(Points.Of(10)));
+        }
+
+        [Test]
+        public void SalesCalculator_CalculatePremiumProduct_Test()
+        {
+            MoneyValue salesValue = MoneyValue.Of(1000);
+            SalesData salesData = new SalesData(salesValue, "Premium");
+
+            Points points = SalesCalculator.Calculate(salesData);
+
+            Assert.That(points, Is.EqualTo(Points.Of(20)));
         }
     }
 
@@ -45,6 +57,11 @@ namespace TDD.LiveSession.Domain.UnitTests
         {
             return new Points(value);
         }
+
+        public override string ToString()
+        {
+            return _value.ToString(CultureInfo.InvariantCulture);
+        }
     }
 
     public struct MoneyValue
@@ -71,7 +88,17 @@ namespace TDD.LiveSession.Domain.UnitTests
     {
         public static Points Calculate(SalesData salesData)
         {
-            return Points.Of(salesData.Value / MoneyValue.Of(100));
+            MoneyValue moneyForOnePoint;
+            if (salesData.ProductCategory == "Standard")
+            {
+                moneyForOnePoint = MoneyValue.Of(100);
+            }
+            else
+            {
+                moneyForOnePoint = MoneyValue.Of(50);
+            }
+
+            return Points.Of(salesData.Value / moneyForOnePoint);
         }
     }
 }
