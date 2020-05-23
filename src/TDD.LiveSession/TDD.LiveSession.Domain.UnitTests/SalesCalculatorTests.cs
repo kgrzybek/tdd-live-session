@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection.Emit;
+using Microsoft.VisualBasic.CompilerServices;
 using NUnit.Framework;
 
 namespace TDD.LiveSession.Domain.UnitTests
@@ -10,28 +11,16 @@ namespace TDD.LiveSession.Domain.UnitTests
     [TestFixture]
     public class SalesCalculatorTests
     {
-        [Test]
-        public void SalesCalculator_CalculateStandardProduct_Test()
+        [TestCaseSource(typeof(TestCasesSet), nameof(TestCasesSet.TestCases))]
+        public void SalesCalculator_Calculate_Test(
+            SalesData salesData, 
+            Points expectedPoints)
         {
-            MoneyValue salesValue = MoneyValue.Of(1000);
-            SalesData salesData = new SalesData(salesValue, "Standard");
             var priceList = CreatePriceList();
 
             Points points = SalesCalculator.Calculate(salesData, priceList);
 
-            Assert.That(points, Is.EqualTo(Points.Of(10)));
-        }
-
-        [Test]
-        public void SalesCalculator_CalculatePremiumProduct_Test()
-        {
-            MoneyValue salesValue = MoneyValue.Of(1000);
-            SalesData salesData = new SalesData(salesValue, "Premium");
-            var priceList = CreatePriceList();
-
-            Points points = SalesCalculator.Calculate(salesData, priceList);
-
-            Assert.That(points, Is.EqualTo(Points.Of(20)));
+            Assert.That(points, Is.EqualTo(expectedPoints));
         }
 
         private static PriceList CreatePriceList()
@@ -42,6 +31,44 @@ namespace TDD.LiveSession.Domain.UnitTests
             PriceList priceList = new PriceList(priceListItems);
 
             return priceList;
+        }
+    }
+
+    public class TestCasesSet
+    {
+        public static IEnumerable<TestCaseData> TestCases { get; }
+
+        static TestCasesSet()
+        {
+            List<TestData> testDataList = new List<TestData>();
+
+            MoneyValue salesValue = MoneyValue.Of(1000);
+            SalesData salesData = new SalesData(salesValue, "Standard");
+            testDataList.Add(new TestData(salesData, Points.Of(10)));
+
+            MoneyValue salesValuePremium = MoneyValue.Of(1000);
+            SalesData salesDataPremium = new SalesData(salesValuePremium, "Premium");
+            testDataList.Add(new TestData(salesDataPremium, Points.Of(20)));
+
+            MoneyValue salesValueProductWithoutPrice = MoneyValue.Of(1000);
+            SalesData salesDataProductWithoutPrice = 
+                new SalesData(salesValueProductWithoutPrice, "Undefined");
+            testDataList.Add(new TestData(salesDataProductWithoutPrice, Points.Of(0)));
+
+            TestCases = testDataList.Select(x => new TestCaseData(x.SalesData, x.ExpectedPoints));
+        }
+
+        private class TestData
+        {
+            public TestData(SalesData salesData, Points expectedPoints)
+            {
+                SalesData = salesData;
+                ExpectedPoints = expectedPoints;
+            }
+
+            public SalesData SalesData { get; }
+
+            public Points ExpectedPoints { get; }
         }
     }
 
@@ -84,6 +111,11 @@ namespace TDD.LiveSession.Domain.UnitTests
             this.Value = value;
             this.ProductCategory = productCategory;
         }
+
+        public override string ToString()
+        {
+            return $"Value:{this.Value}, ProductCategory:{this.ProductCategory}";
+        }
     }
 
     public struct Points
@@ -124,6 +156,36 @@ namespace TDD.LiveSession.Domain.UnitTests
         {
             return moneyValueLeft._value / moneyValueRight._value;
         }
+
+        public static bool operator ==(MoneyValue left, MoneyValue right)
+        {
+            return left._value == right._value;
+        }
+
+        public static bool operator !=(MoneyValue left, MoneyValue right)
+        {
+            return !(left == right);
+        }
+
+        public bool Equals(MoneyValue other)
+        {
+            return _value == other._value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is MoneyValue other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return _value.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return _value.ToString(CultureInfo.InvariantCulture);
+        }
     }
 
     public class SalesCalculator
@@ -132,7 +194,12 @@ namespace TDD.LiveSession.Domain.UnitTests
         {
             MoneyValue moneyForOnePoint = priceList.GetValueForPointForProductCategory(salesData.ProductCategory);
 
-            return Points.Of(salesData.Value / moneyForOnePoint);
+            if (moneyForOnePoint != MoneyValue.Of(0))
+            {
+                return Points.Of(salesData.Value / moneyForOnePoint);
+            }
+
+            return Points.Of(0);
         }
     }
 }
